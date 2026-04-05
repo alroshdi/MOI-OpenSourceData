@@ -731,6 +731,10 @@ if not DF.empty:
             ],
             css=[
                 {
+                    "selector": "#detail-data-table",
+                    "rule": "width: 100% !important; max-width: 100% !important; display: block !important; box-sizing: border-box !important;",
+                },
+                {
                     "selector": ".dash-filter input",
                     "rule": f"font-family: inherit; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; border: 1px solid {P['border']}; background: {P['card']}; color: {P['text']}; min-height: 26px; height: 28px; line-height: 1.2; box-sizing: border-box;",
                 },
@@ -856,7 +860,11 @@ if not DF.empty:
             children=[
                 _section_title(T(lang, "sec_de"), P, "table"),
                 html.P(T(lang, "sec_de_hint"), className="detail-hint"),
-                html.Div(className="detail-table-wrap", children=[tbl]),
+                html.Div(
+                    className="detail-table-wrap",
+                    style={"width": "100%", "minWidth": "100%", "boxSizing": "border-box"},
+                    children=[tbl],
+                ),
             ],
         )
 

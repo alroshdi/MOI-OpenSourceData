@@ -159,9 +159,19 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Detail tab — hint + table wrapper */
+/* Detail tab — full width (no stray gap in RTL) */
+#main-content,
+#tab-body {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .detail-section {
   margin-top: 0.25rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* رؤى تلقائية — قائمة أوضح */
@@ -182,18 +192,32 @@
   color: #475569;
 }
 
-/* جدول التفاصيل يملأ عرض الصفحة */
+/* جدول التفاصيل يملأ عرض الحاوية — الجذر هو #detail-data-table.dash-table-container */
 .detail-table-wrap {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
   box-sizing: border-box;
+  display: block;
 }
 
-#detail-data-table .dash-table-container,
+#detail-data-table.dash-table-container,
+#detail-data-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
 #detail-data-table .dash-spreadsheet-container {
   width: 100% !important;
   max-width: 100% !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+#detail-data-table .dash-spreadsheet-inner {
+  width: 100% !important;
   box-sizing: border-box !important;
 }
 
