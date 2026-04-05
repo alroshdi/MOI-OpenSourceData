@@ -185,44 +185,58 @@
   max-width: 100% !important;
 }
 
-/* Compact detail DataTable: ~32–36px rows, 6–8px padding, vertically centered */
+/* Compact detail DataTable: ~32px rows, 6–8px effective padding, vertically centered */
 #detail-data-table .dash-spreadsheet-inner table {
   border-collapse: collapse !important;
 }
 
 #detail-data-table .dash-spreadsheet-inner td,
 #detail-data-table .dash-spreadsheet-inner th {
-  padding: 6px 8px !important;
+  padding: 5px 8px !important;
   vertical-align: middle !important;
-  line-height: 1.25 !important;
+  line-height: 1.2 !important;
+  box-sizing: border-box !important;
+}
+
+/* Dash wraps cell text in nested divs — remove extra vertical padding */
+#detail-data-table .dash-cell > div,
+#detail-data-table .dash-cell .dash-cell-value {
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  line-height: 1.2 !important;
 }
 
 #detail-data-table thead .dash-cell,
 #detail-data-table thead .dash-header-cell {
-  padding: 6px 8px !important;
-  min-height: 32px !important;
-  line-height: 1.25 !important;
+  padding: 5px 8px !important;
+  min-height: 30px !important;
+  line-height: 1.2 !important;
   vertical-align: middle !important;
   box-sizing: border-box !important;
 }
 
 #detail-data-table tbody .dash-cell {
-  padding: 6px 8px !important;
+  padding: 5px 8px !important;
   min-height: 32px !important;
+  height: 32px !important;
   max-height: 36px !important;
-  line-height: 1.25 !important;
+  line-height: 1.2 !important;
   box-sizing: border-box !important;
   vertical-align: middle !important;
 }
 
 #detail-data-table tbody tr {
-  height: 34px;
+  height: 32px !important;
+  max-height: 36px !important;
 }
 
 #detail-data-table .dash-filter {
-  padding: 4px 6px !important;
-  min-height: 30px !important;
+  padding: 3px 6px !important;
+  min-height: 28px !important;
+  max-height: 32px !important;
   vertical-align: middle !important;
+  box-sizing: border-box !important;
 }
 
 .detail-section .section-ico {
@@ -310,19 +324,18 @@
   opacity: 0.88;
 }
 
-/* Brand logo — light panel */
+/* Brand logo — no card; image sits on toolbar background */
 .app-logo-frame {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 72px;
+  min-width: 0;
   max-width: min(220px, 42vw);
-  min-height: 56px;
-  padding: 8px 12px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  box-shadow: var(--shadow-sm);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   flex-shrink: 0;
 }
 
