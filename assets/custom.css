@@ -164,6 +164,16 @@
   margin-top: 0.25rem;
 }
 
+/* رؤى تلقائية — قائمة أوضح */
+.insights-section ul {
+  margin: 0 0 0.75rem 0;
+  padding-inline-start: 1.35rem;
+}
+
+.insights-section li {
+  color: var(--text);
+}
+
 .detail-hint {
   margin: 0 0 1rem;
   font-size: 0.9rem;
@@ -172,22 +182,26 @@
   color: #475569;
 }
 
-/* تقليص المساحة الفارغة: الجدول بعرض المحتوى مع تمرير أفقي عند الحاجة */
+/* جدول التفاصيل يملأ عرض الصفحة */
 .detail-table-wrap {
-  width: max-content;
+  width: 100%;
   max-width: 100%;
   overflow-x: auto;
+  box-sizing: border-box;
 }
 
 #detail-data-table .dash-table-container,
 #detail-data-table .dash-spreadsheet-container {
-  width: max-content !important;
+  width: 100% !important;
   max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 /* Compact detail DataTable: ~32px rows, 6–8px effective padding, vertically centered */
 #detail-data-table .dash-spreadsheet-inner table {
   border-collapse: collapse !important;
+  width: 100% !important;
+  table-layout: fixed !important;
 }
 
 #detail-data-table .dash-spreadsheet-inner td,

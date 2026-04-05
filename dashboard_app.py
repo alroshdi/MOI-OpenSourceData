@@ -116,9 +116,15 @@ STR = {
         "tbl_reg": "مسجلون",
         "tbl_vot": "مصوتون",
         "tbl_pct": "مشاركة %",
-        "ins_best": "أعلى مشاركة ضمن الفلاتر: {w} ({g}) — {p}% سنة {y}.",
-        "ins_worst": "أدنى مشاركة: {w} ({g}) — {p}% سنة {y}.",
-        "ins_male": "نسبة المصوتين من الذكور من إجمالي المصوتين: {r}%.",
+        "ins_best": "أعلى مشاركة ضمن الفلاتر: {w} ({g}) — {p}٪ سنة {y}.",
+        "ins_worst": "أدنى مشاركة: {w} ({g}) — {p}٪ سنة {y}.",
+        "ins_male": "نسبة المصوتين من الذكور من إجمالي المصوتين: {r}٪.",
+        "ins_female": "نسبة المصوتين من الإناث من إجمالي المصوتين: {r}٪.",
+        "ins_ctx": "ملخص نطاق البيانات: {n} سجل ولاية، السنوات من {y1} إلى {y2}، وأنواع الانتخاب: {kinds}.",
+        "ins_govs": "المحافظات المعروضة ({m}): {govs}.",
+        "ins_mean_med": "متوسط نسبة المشاركة بين السجلات المعروضة {mean}٪، والوسيط {med}٪.",
+        "ins_top3": "أعلى ثلاث ولايات حسب المشاركة: {t}.",
+        "ins_stdev": "الانحراف المعياري لنسبة المشاركة بين السجلات: {s}٪.",
     },
 }
 
@@ -627,35 +633,32 @@ if not DF.empty:
         )
         _figure_rtl_heatmap(fig_heat)
 
-        # عرض أعمدة تقريبي يقلل المساحة الفارغة الجانبية (الجدول يأخذ عرض المحتوى لا كامل الشاشة)
+        # أعمدة بحد أدنى للعرض؛ الجدول يملأ عرض الحاوية (fill_width)
         table_cols = [
-            {"name": T(lang, "tbl_gov"), "id": "المحافظة", "min_width": "110px", "max_width": "200px"},
-            {"name": T(lang, "tbl_wil"), "id": "الولاية", "min_width": "120px", "max_width": "220px"},
-            {"name": T(lang, "tbl_year"), "id": "السنة", "type": "numeric", "min_width": "72px", "max_width": "88px"},
-            {"name": T(lang, "tbl_type"), "id": "نوع_الانتخاب", "min_width": "130px", "max_width": "240px"},
+            {"name": T(lang, "tbl_gov"), "id": "المحافظة", "min_width": "100px"},
+            {"name": T(lang, "tbl_wil"), "id": "الولاية", "min_width": "110px"},
+            {"name": T(lang, "tbl_year"), "id": "السنة", "type": "numeric", "min_width": "64px"},
+            {"name": T(lang, "tbl_type"), "id": "نوع_الانتخاب", "min_width": "120px"},
             {
                 "name": T(lang, "tbl_reg"),
                 "id": "ناخبون_مسجلون_إجمالي",
                 "type": "numeric",
                 "format": {"specifier": ",.0f"},
-                "min_width": "96px",
-                "max_width": "130px",
+                "min_width": "88px",
             },
             {
                 "name": T(lang, "tbl_vot"),
                 "id": "مصوتون_إجمالي",
                 "type": "numeric",
                 "format": {"specifier": ",.0f"},
-                "min_width": "96px",
-                "max_width": "130px",
+                "min_width": "88px",
             },
             {
                 "name": T(lang, "tbl_pct"),
                 "id": "نسبة_المشاركة",
                 "type": "numeric",
                 "format": {"specifier": ".1f"},
-                "min_width": "82px",
-                "max_width": "100px",
+                "min_width": "72px",
             },
         ]
         table_df = df.sort_values(["السنة", "المحافظة", "الولاية"])[
@@ -670,13 +673,14 @@ if not DF.empty:
             page_action="native",
             sort_action="native",
             filter_action="native",
+            fill_width=True,
             style_table={
                 "overflowX": "auto",
                 "borderRadius": "12px",
                 "border": f"1px solid {P['border']}",
                 "backgroundColor": P["card"],
-                "width": "max-content",
-                "maxWidth": "100%",
+                "width": "100%",
+                "minWidth": "100%",
             },
             style_cell={
                 "textAlign": "right",
@@ -736,21 +740,55 @@ if not DF.empty:
                 },
                 {
                     "selector": ".dash-spreadsheet-inner table",
-                    "rule": "width: auto !important; table-layout: auto !important;",
+                    "rule": "width: 100% !important; table-layout: fixed !important;",
                 },
             ],
         )
+
+        def _pct1(x: float) -> str:
+            if pd.isna(x):
+                return "—"
+            return f"{float(x):.1f}"
 
         sub = df.dropna(subset=["نسبة_المشاركة"])
         best = sub.loc[sub["نسبة_المشاركة"].idxmax()] if len(sub) else None
         worst = sub.loc[sub["نسبة_المشاركة"].idxmin()] if len(sub) else None
         insight_lines: list = []
+
+        years_s = df["السنة"].dropna()
+        y1 = int(years_s.min()) if len(years_s) else None
+        y2 = int(years_s.max()) if len(years_s) else None
+        kinds_u = sorted(df["نوع_الانتخاب"].dropna().unique().tolist())
+        kinds_str = "، ".join(str(k) for k in kinds_u) if kinds_u else "—"
+        govs_u = sorted(df["المحافظة"].dropna().unique().tolist())
+        m_gov = len(govs_u)
+        if m_gov <= 8:
+            govs_disp = "، ".join(str(g) for g in govs_u) if govs_u else "—"
+        else:
+            govs_disp = f"{m_gov} محافظة — استخدم فلتر المحافظة لعرض أسماء محددة"
+
+        insight_lines.append(
+            T(lang, "ins_ctx").format(n=len(df), y1=y1 or "—", y2=y2 or "—", kinds=kinds_str)
+        )
+        insight_lines.append(T(lang, "ins_govs").format(m=m_gov, govs=govs_disp))
+
+        if len(sub):
+            s = sub["نسبة_المشاركة"]
+            mean_p = float(s.mean())
+            med_p = float(s.median())
+            std_p = float(s.std()) if len(s) > 1 else float("nan")
+            insight_lines.append(
+                T(lang, "ins_mean_med").format(mean=_pct1(mean_p), med=_pct1(med_p))
+            )
+            if pd.notna(std_p) and len(s) > 1:
+                insight_lines.append(T(lang, "ins_stdev").format(s=_pct1(std_p)))
+
         if best is not None and not pd.isna(best["نسبة_المشاركة"]):
             insight_lines.append(
                 T(lang, "ins_best").format(
                     w=best["الولاية"],
                     g=best["المحافظة"],
-                    p=best["نسبة_المشاركة"],
+                    p=_pct1(best["نسبة_المشاركة"]),
                     y=int(best["السنة"]),
                 )
             )
@@ -759,26 +797,36 @@ if not DF.empty:
                 T(lang, "ins_worst").format(
                     w=worst["الولاية"],
                     g=worst["المحافظة"],
-                    p=worst["نسبة_المشاركة"],
+                    p=_pct1(worst["نسبة_المشاركة"]),
                     y=int(worst["السنة"]),
                 )
             )
+
+        if len(sub) >= 3:
+            top3 = sub.nlargest(3, "نسبة_المشاركة")
+            parts = [f"{row['الولاية']} ({_pct1(row['نسبة_المشاركة'])}٪)" for _, row in top3.iterrows()]
+            insight_lines.append(T(lang, "ins_top3").format(t="، ".join(parts)))
+
         f_ratio = (df["مصوتون_ذكور"].sum() / vote * 100) if vote > 0 else float("nan")
         if pd.notna(f_ratio):
-            insight_lines.append(T(lang, "ins_male").format(r=f_ratio))
+            insight_lines.append(T(lang, "ins_male").format(r=_pct1(f_ratio)))
+        f_fem = (df["مصوتون_إناث"].sum() / vote * 100) if vote > 0 else float("nan")
+        if pd.notna(f_fem):
+            insight_lines.append(T(lang, "ins_female").format(r=_pct1(f_fem)))
 
         insights_block = html.Div(
             [
                 _section_title(T(lang, "sec_in"), P, "lightbulb"),
                 html.Ul(
-                    [html.Li(t, style={"marginBottom": "0.5rem"}) for t in insight_lines]
+                    [html.Li(t, style={"marginBottom": "0.5rem", "lineHeight": "1.6"}) for t in insight_lines]
                     or [html.Li(T(lang, "insight_none"))]
                 ),
                 html.P(
                     T(lang, "note_2011"),
                     style={"color": P["muted"], "fontSize": "0.9rem", "marginTop": "1rem"},
                 ),
-            ]
+            ],
+            className="insights-section",
         )
 
         overview = html.Div(
