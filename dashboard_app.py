@@ -128,6 +128,13 @@ STR = {
         "ins_best": "أعلى مشاركة ضمن الفلاتر: {w} ({g}) — {p}% سنة {y}.",
         "ins_worst": "أدنى مشاركة: {w} ({g}) — {p}% سنة {y}.",
         "ins_male": "نسبة المصوتين من الذكور من إجمالي المصوتين: {r}%.",
+        "ui_appearance": "المظهر",
+        "ui_language": "اللغة",
+        "aria_toolbar_quick": "المظهر واللغة",
+        "ui_theme_to_light": "التبديل إلى الوضع الفاتح",
+        "ui_theme_to_dark": "التبديل إلى الوضع الداكن",
+        "ui_lang_to_en": "التبديل إلى الإنجليزية",
+        "ui_lang_to_ar": "التبديل إلى العربية",
     },
     "en": {
         "title": "Voter data analytics dashboard",
@@ -176,6 +183,13 @@ STR = {
         "ins_best": "Highest turnout in selection: {w} ({g}) — {p}% in {y}.",
         "ins_worst": "Lowest turnout: {w} ({g}) — {p}% in {y}.",
         "ins_male": "Share of male voters in total voters: {r}%.",
+        "ui_appearance": "Appearance",
+        "ui_language": "Language",
+        "aria_toolbar_quick": "Theme and language",
+        "ui_theme_to_light": "Switch to light theme",
+        "ui_theme_to_dark": "Switch to dark theme",
+        "ui_lang_to_en": "Switch to English",
+        "ui_lang_to_ar": "Switch to Arabic",
     },
 }
 
@@ -230,10 +244,14 @@ def _filter_lbl(lang: str, key: str, icon_name: str) -> html.Div:
     )
 
 
-def _toolbar(lang: str, _theme: str) -> html.Div:
-    """Header strip: ministry logo and title only (theme/locale fixed via stores)."""
+def _toolbar(lang: str, theme: str) -> html.Div:
+    """Header: brand + compact icon toggles (theme sun/moon, language globe)."""
     rtl = lang == "ar"
     toolbar_dir = "app-toolbar--rtl" if rtl else "app-toolbar--ltr"
+    # Icon shows the target mode on click: dark → sun (switch to light); light → moon (switch to dark)
+    theme_action_ico = "sun" if theme == "dark" else "moon"
+    theme_aria = T(lang, "ui_theme_to_light") if theme == "dark" else T(lang, "ui_theme_to_dark")
+    lang_aria = T(lang, "ui_lang_to_en") if lang == "ar" else T(lang, "ui_lang_to_ar")
 
     return html.Div(
         className=f"app-toolbar {toolbar_dir}",
@@ -258,6 +276,54 @@ def _toolbar(lang: str, _theme: str) -> html.Div:
                         children=[
                             html.H1(id="hdr-title", children=T(lang, "title")),
                             html.P(id="hdr-sub", children=T(lang, "subtitle")),
+                        ],
+                    ),
+                ],
+            ),
+            html.Div(
+                className="toolbar-toggles",
+                role="toolbar",
+                **{"aria-label": T(lang, "aria_toolbar_quick")},
+                children=[
+                    html.Div(
+                        className="toolbar-toggle-group",
+                        children=[
+                            html.Span(
+                                className="toolbar-toggle-label",
+                                children=[
+                                    _ico("moon", "toolbar-lbl-ico"),
+                                    html.Span(T(lang, "ui_appearance")),
+                                ],
+                            ),
+                            html.Button(
+                                id="theme-toggle-btn",
+                                type="button",
+                                className="icon-toggle-btn icon-toggle-btn--theme",
+                                title=theme_aria,
+                                **{"aria-label": theme_aria},
+                                children=[_ico(theme_action_ico, "icon-toggle-btn__ico")],
+                            ),
+                        ],
+                    ),
+                    html.Div(
+                        className="toolbar-toggle-group",
+                        children=[
+                            html.Span(
+                                className="toolbar-toggle-label",
+                                children=[
+                                    _ico("globe", "toolbar-lbl-ico"),
+                                    html.Span(T(lang, "ui_language")),
+                                ],
+                            ),
+                            html.Button(
+                                id="locale-toggle-btn",
+                                type="button",
+                                className="icon-toggle-btn icon-toggle-btn--lang",
+                                title=lang_aria,
+                                **{"aria-label": lang_aria},
+                                lang="ar" if lang == "ar" else "en",
+                                children=[_ico("globe", "icon-toggle-btn__ico")],
+                            ),
                         ],
                     ),
                 ],
@@ -504,6 +570,28 @@ def sync_shell(theme: str | None, lang: str | None):
         _shell_style(theme, lang),
         _toolbar(lang, theme),
     )
+
+
+@callback(
+    Output("theme-store", "data"),
+    Input("theme-toggle-btn", "n_clicks"),
+    State("theme-store", "data"),
+    prevent_initial_call=True,
+)
+def toggle_theme(_n, current):
+    cur = current if current in ("dark", "light") else "dark"
+    return "light" if cur == "dark" else "dark"
+
+
+@callback(
+    Output("locale-store", "data"),
+    Input("locale-toggle-btn", "n_clicks"),
+    State("locale-store", "data"),
+    prevent_initial_call=True,
+)
+def toggle_locale(_n, current):
+    cur = current if current in ("ar", "en") else "ar"
+    return "en" if cur == "ar" else "ar"
 
 
 if DF.empty:
@@ -816,10 +904,10 @@ if not DF.empty:
             },
             style_cell={
                 "textAlign": "right" if lang == "ar" else "left",
-                "padding": "4px 8px",
-                "minHeight": "28px",
-                "height": "auto",
-                "lineHeight": "1.35",
+                "padding": "6px 8px",
+                "minHeight": "32px",
+                "lineHeight": "1.25",
+                "verticalAlign": "middle",
                 "backgroundColor": P["bg"],
                 "color": P["text"],
                 "border": f"1px solid {P['border']}",
@@ -833,12 +921,20 @@ if not DF.empty:
                 "borderBottom": f"2px solid {P['accent']}",
                 "padding": "6px 8px",
                 "whiteSpace": "normal",
-                "lineHeight": "1.3",
+                "lineHeight": "1.25",
+                "verticalAlign": "middle",
+            },
+            style_data={
+                "height": "34px",
+                "padding": "6px 8px",
+                "verticalAlign": "middle",
             },
             style_filter={
                 "backgroundColor": P["plot_bg"],
                 "border": f"1px solid {P['border']}",
-                "padding": "2px 4px",
+                "padding": "4px 6px",
+                "minHeight": "30px",
+                "verticalAlign": "middle",
             },
             style_data_conditional=[
                 {"if": {"row_index": "odd"}, "backgroundColor": P["table_alt"]},
@@ -846,7 +942,7 @@ if not DF.empty:
             css=[
                 {
                     "selector": ".dash-filter input",
-                    "rule": f"font-family: inherit; font-size: 0.75rem; padding: 4px 6px; border-radius: 6px; border: 1px solid {P['border']}; background: {P['card']}; color: {P['text']}; min-height: 26px; height: 28px;",
+                    "rule": f"font-family: inherit; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; border: 1px solid {P['border']}; background: {P['card']}; color: {P['text']}; min-height: 28px; height: 30px; line-height: 1.25; box-sizing: border-box;",
                 },
                 {
                     "selector": ".dash-table-container .previous-next-container",
