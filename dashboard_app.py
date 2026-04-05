@@ -135,6 +135,10 @@ STR = {
         "ui_theme_to_dark": "التبديل إلى الوضع الداكن",
         "ui_lang_to_en": "التبديل إلى الإنجليزية",
         "ui_lang_to_ar": "التبديل إلى العربية",
+        "ui_status_theme_dark": "داكن",
+        "ui_status_theme_light": "فاتح",
+        "ui_status_lang_ar": "عربي",
+        "ui_status_lang_en": "English",
     },
     "en": {
         "title": "Voter data analytics dashboard",
@@ -190,6 +194,10 @@ STR = {
         "ui_theme_to_dark": "Switch to dark theme",
         "ui_lang_to_en": "Switch to English",
         "ui_lang_to_ar": "Switch to Arabic",
+        "ui_status_theme_dark": "Dark",
+        "ui_status_theme_light": "Light",
+        "ui_status_lang_ar": "Arabic",
+        "ui_status_lang_en": "English",
     },
 }
 
@@ -252,6 +260,8 @@ def _toolbar(lang: str, theme: str) -> html.Div:
     theme_action_ico = "sun" if theme == "dark" else "moon"
     theme_aria = T(lang, "ui_theme_to_light") if theme == "dark" else T(lang, "ui_theme_to_dark")
     lang_aria = T(lang, "ui_lang_to_en") if lang == "ar" else T(lang, "ui_lang_to_ar")
+    theme_status = T(lang, "ui_status_theme_dark") if theme == "dark" else T(lang, "ui_status_theme_light")
+    lang_status = T(lang, "ui_status_lang_ar") if lang == "ar" else T(lang, "ui_status_lang_en")
 
     return html.Div(
         className=f"app-toolbar {toolbar_dir}",
@@ -286,43 +296,63 @@ def _toolbar(lang: str, theme: str) -> html.Div:
                 **{"aria-label": T(lang, "aria_toolbar_quick")},
                 children=[
                     html.Div(
-                        className="toolbar-toggle-group",
+                        className="toolbar-toggle-group toolbar-toggle-group--theme",
                         children=[
-                            html.Span(
+                            html.Div(
                                 className="toolbar-toggle-label",
                                 children=[
                                     _ico("moon", "toolbar-lbl-ico"),
-                                    html.Span(T(lang, "ui_appearance")),
+                                    html.Span(T(lang, "ui_appearance"), className="toolbar-toggle-label-text"),
                                 ],
                             ),
-                            html.Button(
-                                id="theme-toggle-btn",
-                                type="button",
-                                className="icon-toggle-btn icon-toggle-btn--theme",
-                                title=theme_aria,
-                                **{"aria-label": theme_aria},
-                                children=[_ico(theme_action_ico, "icon-toggle-btn__ico")],
+                            html.Div(
+                                className="toolbar-toggle-stack",
+                                children=[
+                                    html.Button(
+                                        id="theme-toggle-btn",
+                                        type="button",
+                                        className="icon-toggle-btn icon-toggle-btn--theme",
+                                        title=theme_aria,
+                                        **{"aria-label": theme_aria},
+                                        children=[_ico(theme_action_ico, "icon-toggle-btn__ico")],
+                                    ),
+                                    html.Span(
+                                        theme_status,
+                                        className="toolbar-toggle-hint",
+                                        **{"aria-hidden": "true"},
+                                    ),
+                                ],
                             ),
                         ],
                     ),
                     html.Div(
-                        className="toolbar-toggle-group",
+                        className="toolbar-toggle-group toolbar-toggle-group--lang",
                         children=[
-                            html.Span(
+                            html.Div(
                                 className="toolbar-toggle-label",
                                 children=[
                                     _ico("globe", "toolbar-lbl-ico"),
-                                    html.Span(T(lang, "ui_language")),
+                                    html.Span(T(lang, "ui_language"), className="toolbar-toggle-label-text"),
                                 ],
                             ),
-                            html.Button(
-                                id="locale-toggle-btn",
-                                type="button",
-                                className="icon-toggle-btn icon-toggle-btn--lang",
-                                title=lang_aria,
-                                **{"aria-label": lang_aria},
-                                lang="ar" if lang == "ar" else "en",
-                                children=[_ico("globe", "icon-toggle-btn__ico")],
+                            html.Div(
+                                className="toolbar-toggle-stack",
+                                children=[
+                                    html.Button(
+                                        id="locale-toggle-btn",
+                                        type="button",
+                                        className="icon-toggle-btn icon-toggle-btn--lang",
+                                        title=lang_aria,
+                                        **{"aria-label": lang_aria},
+                                        lang="ar" if lang == "ar" else "en",
+                                        children=[_ico("globe", "icon-toggle-btn__ico")],
+                                    ),
+                                    html.Span(
+                                        lang_status,
+                                        className="toolbar-toggle-hint",
+                                        **{"aria-hidden": "true"},
+                                    ),
+                                ],
                             ),
                         ],
                     ),
