@@ -9,19 +9,8 @@
   --transition: 0.2s ease;
 }
 
-#app-root.theme-dark {
-  --shell-bg: #0b0f14;
-  --surface: #121a24;
-  --elevated: #1a2433;
-  --text: #e8eef7;
-  --muted: #8b9cb3;
-  --border: #2d3a4f;
-  --accent: #3b82f6;
-  --accent-2: #10b981;
-  --toolbar-border: rgba(255, 255, 255, 0.06);
-}
-
-#app-root.theme-light {
+/* Single fixed theme: light + RTL (Arabic) */
+#app-root {
   --shell-bg: #f0f4f8;
   --surface: #ffffff;
   --elevated: #f8fafc;
@@ -31,9 +20,6 @@
   --accent: #2563eb;
   --accent-2: #059669;
   --toolbar-border: rgba(15, 23, 42, 0.08);
-}
-
-#app-root {
   min-height: 100vh;
   transition: background var(--transition), color var(--transition);
 }
@@ -44,8 +30,8 @@
   justify-content: flex-start;
   gap: 1rem;
   flex-wrap: wrap;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.25rem;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1rem;
   background: var(--elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -183,13 +169,6 @@
   font-size: 0.9rem;
   line-height: 1.55;
   max-width: 52rem;
-}
-
-#app-root.theme-dark .detail-hint {
-  color: #b4c0d4;
-}
-
-#app-root.theme-light .detail-hint {
   color: #475569;
 }
 
@@ -331,7 +310,7 @@
   opacity: 0.88;
 }
 
-/* Brand logo — light panel so dark text in PNG stays readable on dark UI */
+/* Brand logo — light panel */
 .app-logo-frame {
   display: flex;
   align-items: center;
@@ -341,16 +320,10 @@
   min-height: 56px;
   padding: 8px 12px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  flex-shrink: 0;
-}
-
-#app-root.theme-light .app-logo-frame {
-  border-color: var(--border);
+  border: 1px solid var(--border);
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
 }
 
 .app-logo-img {
@@ -408,13 +381,9 @@
   width: 42px;
   height: 42px;
   border-radius: 11px;
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(37, 99, 235, 0.08);
   border: 1px solid var(--border);
   flex-shrink: 0;
-}
-
-#app-root.theme-light .kpi-card__icon {
-  background: rgba(37, 99, 235, 0.08);
 }
 
 .kpi-card__title {
@@ -470,29 +439,18 @@
   opacity: 1;
 }
 
-/* Tabs: theme-aware (dcc injects inline colors; override per theme) */
-#app-root.theme-light #main-tabs .tab {
+/* Tabs (light UI only) */
+#app-root #main-tabs .tab {
   background: var(--surface) !important;
   color: var(--text) !important;
   border-color: var(--border) !important;
 }
 
-#app-root.theme-light #main-tabs .tab--selected {
+#app-root #main-tabs .tab--selected {
   color: #fff !important;
   background: var(--accent) !important;
 }
 
-#app-root.theme-dark #main-tabs .tab {
-  background: var(--surface) !important;
-  color: var(--muted) !important;
-}
-
-#app-root.theme-dark #main-tabs .tab--selected {
-  color: #fff !important;
-  background: var(--accent) !important;
-}
-
-#app-root.theme-dark #main-tabs .tab:hover,
-#app-root.theme-light #main-tabs .tab:hover {
+#app-root #main-tabs .tab:hover {
   filter: brightness(1.03);
 }

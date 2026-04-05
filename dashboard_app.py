@@ -15,7 +15,7 @@ if sys.platform == "win32":
         pass
 
 from flask import send_from_directory
-from dash import Dash, Input, Output, callback, clientside_callback, dash_table, dcc, html
+from dash import Dash, Input, Output, callback, dash_table, dcc, html
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -51,36 +51,23 @@ def _discover_logo_url() -> str:
 
 LOGO_URL = _discover_logo_url()
 
-# واجهة ثابتة: عربية + وضع فاتح (لا مبدّلات في الواجهة)
+# واجهة ثابتة: عربية + وضع فاتح فقط (لا إعدادات ولا مبدّلات)
 APP_LANG = "ar"
-APP_THEME = "light"
 
 
-def get_palette(mode: str) -> dict:
-    if mode == "light":
-        return {
-            "bg": "#f0f4f8",
-            "card": "#ffffff",
-            "plot_bg": "#f8fafc",
-            "text": "#0f172a",
-            "muted": "#64748b",
-            "accent": "#2563eb",
-            "accent2": "#059669",
-            "border": "#e2e8f0",
-            "table_alt": "#f1f5f9",
-            "plot_template": "plotly_white",
-        }
+def get_palette() -> dict:
+    """Light theme palette only."""
     return {
-        "bg": "#0b0f14",
-        "card": "#1a2433",
-        "plot_bg": "#121a24",
-        "text": "#e8eef7",
-        "muted": "#8b9cb3",
-        "accent": "#3b82f6",
-        "accent2": "#10b981",
-        "border": "#2d3a4f",
-        "table_alt": "#1a2535",
-        "plot_template": "plotly_dark",
+        "bg": "#f0f4f8",
+        "card": "#ffffff",
+        "plot_bg": "#f8fafc",
+        "text": "#0f172a",
+        "muted": "#64748b",
+        "accent": "#2563eb",
+        "accent2": "#059669",
+        "border": "#e2e8f0",
+        "table_alt": "#f1f5f9",
+        "plot_template": "plotly_white",
     }
 
 
@@ -133,54 +120,6 @@ STR = {
         "ins_worst": "أدنى مشاركة: {w} ({g}) — {p}% سنة {y}.",
         "ins_male": "نسبة المصوتين من الذكور من إجمالي المصوتين: {r}%.",
     },
-    "en": {
-        "title": "Voter data analytics dashboard",
-        "subtitle": "Open data — Municipal councils & Shura Council elections (by wilayat and age groups)",
-        "filters": "Filters & search",
-        "f_kind": "Election type",
-        "f_year": "Year",
-        "f_gov": "Governorate",
-        "f_search": "Search wilayat name",
-        "ph_search": "e.g. Salalah, Al-Seeb…",
-        "ph_all": "All",
-        "kpi_reg": "Total registered voters (filtered)",
-        "kpi_vote": "Total voters",
-        "kpi_turn": "Overall turnout %",
-        "kpi_rows": "Wilayat records",
-        "tab_ov": "Overview",
-        "tab_tr": "Trends",
-        "tab_de": "Details",
-        "tab_in": "Insights",
-        "sec_ov": "Overview",
-        "sec_tr": "Trends over time",
-        "sec_de": "Detailed analysis — interactive table (sort & filter)",
-        "sec_de_hint": "Click column headers to sort. Use the filter row under each column for quick search.",
-        "sec_in": "Automated insights",
-        "empty": "No data files found in «البيانات المفتوحة». Add Excel files and restart.",
-        "no_data": "No rows match the current filters.",
-        "insight_none": "Adjust filters to see more detail.",
-        "note_2011": "Note: the 2011 Shura file uses slightly different age bands for voters; age distributions are only roughly comparable across years.",
-        "chart_reg": "Registered",
-        "chart_vote": "Voted",
-        "axis_count": "Count",
-        "axis_year": "Year",
-        "pie_m": "Male",
-        "pie_f": "Female",
-        "heat_x": "Age band",
-        "heat_y": "Governorate",
-        "heat_c": "Count",
-        "age_col": "Age band",
-        "tbl_gov": "Governorate",
-        "tbl_wil": "Wilayat",
-        "tbl_year": "Year",
-        "tbl_type": "Election type",
-        "tbl_reg": "Registered",
-        "tbl_vot": "Voted",
-        "tbl_pct": "Turnout %",
-        "ins_best": "Highest turnout in selection: {w} ({g}) — {p}% in {y}.",
-        "ins_worst": "Lowest turnout: {w} ({g}) — {p}% in {y}.",
-        "ins_male": "Share of male voters in total voters: {r}%.",
-    },
 }
 
 
@@ -188,12 +127,10 @@ def T(lang: str, key: str) -> str:
     return STR.get(lang, STR["ar"]).get(key, key)
 
 
-AGE_LABELS_EN = ["< 30", "30–39", "40–49", "50–59", "60–69", "70+"]
-
 app = Dash(
     __name__,
     suppress_callback_exceptions=True,
-    title="Election analytics — MOI",
+    title="لوحة تحليلات بيانات الناخبين — وزارة الداخلية",
     update_title=None,
     assets_folder=os.path.join(BASE_DIR, "assets"),
 )
@@ -268,8 +205,8 @@ def _toolbar() -> html.Div:
     )
 
 
-def _shell_style(theme: str, lang: str) -> dict:
-    p = get_palette("light" if theme == "light" else "dark")
+def _shell_style() -> dict:
+    p = get_palette()
     return {
         "fontFamily": "'IBM Plex Sans Arabic', 'Inter', 'Segoe UI', Tahoma, sans-serif",
         "background": p["bg"],
@@ -282,30 +219,19 @@ def _shell_style(theme: str, lang: str) -> dict:
     }
 
 
-def _root_class(theme: str, lang: str) -> str:
-    base = "theme-light" if theme == "light" else "theme-dark"
-    return base + (" layout-rtl" if lang == "ar" else " layout-ltr")
-
-
-def _figure_rtl_axes(fig, lang: str) -> None:
-    """Plotly: y-axis on the right and legend on the inner-start for Arabic RTL."""
-    if lang != "ar":
-        return
+def _figure_rtl_axes(fig) -> None:
+    """Plotly: y-axis on the right and legend on the inner-start for RTL."""
     fig.update_layout(
         yaxis=dict(side="right"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0, xanchor="right"),
     )
 
 
-def _figure_rtl_pie(fig, lang: str) -> None:
-    if lang != "ar":
-        return
+def _figure_rtl_pie(fig) -> None:
     fig.update_layout(legend=dict(orientation="h", y=1.05, x=0, xanchor="right"))
 
 
-def _figure_rtl_heatmap(fig, lang: str) -> None:
-    if lang != "ar":
-        return
+def _figure_rtl_heatmap(fig) -> None:
     fig.update_layout(
         yaxis=dict(side="right"),
         coloraxis_colorbar=dict(x=-0.02, xanchor="right", len=0.7),
@@ -463,20 +389,19 @@ _MAIN_DASHBOARD = html.Div(
             style={"marginBottom": "1rem"},
         ),
         html.Div(id="tab-body"),
-        html.Div(id="detail-table-i18n-dummy", style={"display": "none"}),
     ],
 )
 
 app.layout = html.Div(
     id="app-root",
-    className=_root_class(APP_THEME, APP_LANG),
+    className="theme-light layout-rtl",
     dir="rtl",
     lang="ar",
     children=[
         _toolbar(),
         html.Div(
             id="app-inner",
-            style=_shell_style(APP_THEME, APP_LANG),
+            style=_shell_style(),
             children=[_MAIN_DASHBOARD] if not DF.empty else [html.Div(id="empty-state")],
         ),
     ],
@@ -507,9 +432,8 @@ if not DF.empty:
         Input("main-tabs", "value"),
     )
     def update_all(kinds, years, govs, search, tab):
-        theme = APP_THEME
         lang = APP_LANG
-        P = get_palette("light" if theme == "light" else "dark")
+        P = get_palette()
         px.defaults.template = P["plot_template"]
 
         def _filter_df(
@@ -574,7 +498,7 @@ if not DF.empty:
             if pd.isna(x):
                 return "—"
             if x >= 1e6:
-                return f"{x/1e6:.2f} M" if lang == "en" else f"{x/1e6:.2f} مليون"
+                return f"{x/1e6:.2f} مليون"
             return f"{x:,.0f}"
 
         k1 = fmt_num(reg)
@@ -625,7 +549,7 @@ if not DF.empty:
             xaxis_title=T(lang, "axis_year"),
             height=380,
         )
-        _figure_rtl_axes(fig_line, lang)
+        _figure_rtl_axes(fig_line)
 
         top_n = (
             df.groupby(["الولاية", "المحافظة"], as_index=False)
@@ -652,7 +576,7 @@ if not DF.empty:
             showlegend=True,
             yaxis={"categoryorder": "total ascending"},
         )
-        _figure_rtl_axes(fig_bar, lang)
+        _figure_rtl_axes(fig_bar)
 
         gender = pd.DataFrame(
             {
@@ -668,10 +592,10 @@ if not DF.empty:
             margin=dict(l=24, r=24, t=44, b=44),
             height=360,
         )
-        _figure_rtl_pie(fig_pie, lang)
+        _figure_rtl_pie(fig_pie)
 
         age_cols = [f"عمر_مسجل_{i}" for i in range(6)]
-        age_labels = AGE_REGISTERED_LABELS if lang == "ar" else AGE_LABELS_EN
+        age_labels = AGE_REGISTERED_LABELS
         age_sum = df[age_cols].sum()
         heat_data = pd.DataFrame({T(lang, "age_col"): age_labels, T(lang, "heat_c"): age_sum.values})
         fig_age_bar = px.bar(heat_data, x=T(lang, "age_col"), y=T(lang, "heat_c"), color=T(lang, "heat_c"), color_continuous_scale="Blues")
@@ -683,7 +607,7 @@ if not DF.empty:
             height=360,
             showlegend=False,
         )
-        _figure_rtl_axes(fig_age_bar, lang)
+        _figure_rtl_axes(fig_age_bar)
 
         gov_age = df.groupby("المحافظة")[age_cols].sum()
         fig_heat = px.imshow(
@@ -701,7 +625,7 @@ if not DF.empty:
             height=max(320, len(gov_age) * 28),
             margin=dict(l=120, r=24, t=44, b=60),
         )
-        _figure_rtl_heatmap(fig_heat, lang)
+        _figure_rtl_heatmap(fig_heat)
 
         # عرض أعمدة تقريبي يقلل المساحة الفارغة الجانبية (الجدول يأخذ عرض المحتوى لا كامل الشاشة)
         table_cols = [
@@ -755,7 +679,7 @@ if not DF.empty:
                 "maxWidth": "100%",
             },
             style_cell={
-                "textAlign": "right" if lang == "ar" else "left",
+                "textAlign": "right",
                 "padding": "6px 8px",
                 "minHeight": "32px",
                 "lineHeight": "1.25",
@@ -896,29 +820,6 @@ if not DF.empty:
             lbl_block[4],
             body,
         )
-
-    clientside_callback(
-        """
-        function(tab) {
-            const ph = "تصفية هذا العمود…";
-            function apply() {
-                const root = document.getElementById("detail-data-table");
-                if (!root) return;
-                root.querySelectorAll(".dash-filter input").forEach(function(el) {
-                    el.placeholder = ph;
-                });
-            }
-            apply();
-            setTimeout(apply, 0);
-            setTimeout(apply, 150);
-            setTimeout(apply, 400);
-            return "";
-        }
-        """,
-        Output("detail-table-i18n-dummy", "children"),
-        Input("main-tabs", "value"),
-    )
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8050"))
