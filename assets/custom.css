@@ -196,6 +196,7 @@
 .detail-table-wrap {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   box-sizing: border-box;
   display: block;
@@ -218,7 +219,15 @@
 
 #detail-data-table .dash-spreadsheet-inner {
   width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
   box-sizing: border-box !important;
+}
+
+#detail-data-table .dash-spreadsheet {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 /* Compact detail DataTable: ~32px rows, 6–8px effective padding, vertically centered */

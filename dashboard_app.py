@@ -633,32 +633,32 @@ if not DF.empty:
         )
         _figure_rtl_heatmap(fig_heat)
 
-        # أعمدة بحد أدنى للعرض؛ الجدول يملأ عرض الحاوية (fill_width)
+        # عرض نسبي (مجموع 100%) لملء العرض بدون شريط تمرير زائف أو فراغ RTL
         table_cols = [
-            {"name": T(lang, "tbl_gov"), "id": "المحافظة", "min_width": "100px"},
-            {"name": T(lang, "tbl_wil"), "id": "الولاية", "min_width": "110px"},
-            {"name": T(lang, "tbl_year"), "id": "السنة", "type": "numeric", "min_width": "64px"},
-            {"name": T(lang, "tbl_type"), "id": "نوع_الانتخاب", "min_width": "120px"},
+            {"name": T(lang, "tbl_gov"), "id": "المحافظة", "width": "14%"},
+            {"name": T(lang, "tbl_wil"), "id": "الولاية", "width": "18%"},
+            {"name": T(lang, "tbl_year"), "id": "السنة", "type": "numeric", "width": "8%"},
+            {"name": T(lang, "tbl_type"), "id": "نوع_الانتخاب", "width": "16%"},
             {
                 "name": T(lang, "tbl_reg"),
                 "id": "ناخبون_مسجلون_إجمالي",
                 "type": "numeric",
                 "format": {"specifier": ",.0f"},
-                "min_width": "88px",
+                "width": "14%",
             },
             {
                 "name": T(lang, "tbl_vot"),
                 "id": "مصوتون_إجمالي",
                 "type": "numeric",
                 "format": {"specifier": ",.0f"},
-                "min_width": "88px",
+                "width": "14%",
             },
             {
                 "name": T(lang, "tbl_pct"),
                 "id": "نسبة_المشاركة",
                 "type": "numeric",
                 "format": {"specifier": ".1f"},
-                "min_width": "72px",
+                "width": "16%",
             },
         ]
         table_df = df.sort_values(["السنة", "المحافظة", "الولاية"])[
@@ -675,12 +675,13 @@ if not DF.empty:
             filter_action="native",
             fill_width=True,
             style_table={
-                "overflowX": "auto",
+                "overflowX": "hidden",
                 "borderRadius": "12px",
                 "border": f"1px solid {P['border']}",
                 "backgroundColor": P["card"],
                 "width": "100%",
-                "minWidth": "100%",
+                "minWidth": "0",
+                "maxWidth": "100%",
             },
             style_cell={
                 "textAlign": "right",
@@ -740,11 +741,15 @@ if not DF.empty:
                 },
                 {
                     "selector": ".dash-table-container .previous-next-container",
-                    "rule": "font-size: 0.75rem; padding-top: 0.35rem;",
+                    "rule": "font-size: 0.75rem; padding-top: 0.5rem; width: 100%; box-sizing: border-box;",
                 },
                 {
                     "selector": ".dash-spreadsheet-inner table",
-                    "rule": "width: 100% !important; table-layout: fixed !important;",
+                    "rule": "width: 100% !important; table-layout: fixed !important; min-width: 0 !important;",
+                },
+                {
+                    "selector": ".dash-spreadsheet",
+                    "rule": "min-width: 0 !important; width: 100% !important; max-width: 100% !important;",
                 },
             ],
         )
