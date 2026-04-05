@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 لوحة تحليلات بيانات الناخبين — وزارة الداخلية (البيانات المفتوحة).
-تشغيل: py dashboard_app.py  →  http://127.0.0.1:8050
+واجهة عربية ووضع فاتح ثابتين. تشغيل: py dashboard_app.py  →  http://127.0.0.1:8050
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ if sys.platform == "win32":
         pass
 
 from flask import send_from_directory
-from dash import Dash, Input, Output, State, callback, clientside_callback, ctx, dash_table, dcc, html, no_update
+from dash import Dash, Input, Output, callback, clientside_callback, dash_table, dcc, html
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -50,6 +50,10 @@ def _discover_logo_url() -> str:
 
 
 LOGO_URL = _discover_logo_url()
+
+# واجهة ثابتة: عربية + وضع فاتح (لا مبدّلات في الواجهة)
+APP_LANG = "ar"
+APP_THEME = "light"
 
 
 def get_palette(mode: str) -> dict:
@@ -128,17 +132,6 @@ STR = {
         "ins_best": "أعلى مشاركة ضمن الفلاتر: {w} ({g}) — {p}% سنة {y}.",
         "ins_worst": "أدنى مشاركة: {w} ({g}) — {p}% سنة {y}.",
         "ins_male": "نسبة المصوتين من الذكور من إجمالي المصوتين: {r}%.",
-        "ui_appearance": "المظهر",
-        "ui_language": "اللغة",
-        "aria_toolbar_quick": "المظهر واللغة",
-        "ui_theme_to_light": "التبديل إلى الوضع الفاتح",
-        "ui_theme_to_dark": "التبديل إلى الوضع الداكن",
-        "ui_lang_to_en": "التبديل إلى الإنجليزية",
-        "ui_lang_to_ar": "التبديل إلى العربية",
-        "ui_status_theme_dark": "داكن",
-        "ui_status_theme_light": "فاتح",
-        "ui_status_lang_ar": "عربي",
-        "ui_status_lang_en": "English",
     },
     "en": {
         "title": "Voter data analytics dashboard",
@@ -187,17 +180,6 @@ STR = {
         "ins_best": "Highest turnout in selection: {w} ({g}) — {p}% in {y}.",
         "ins_worst": "Lowest turnout: {w} ({g}) — {p}% in {y}.",
         "ins_male": "Share of male voters in total voters: {r}%.",
-        "ui_appearance": "Appearance",
-        "ui_language": "Language",
-        "aria_toolbar_quick": "Theme and language",
-        "ui_theme_to_light": "Switch to light theme",
-        "ui_theme_to_dark": "Switch to dark theme",
-        "ui_lang_to_en": "Switch to English",
-        "ui_lang_to_ar": "Switch to Arabic",
-        "ui_status_theme_dark": "Dark",
-        "ui_status_theme_light": "Light",
-        "ui_status_lang_ar": "Arabic",
-        "ui_status_lang_en": "English",
     },
 }
 
@@ -224,7 +206,7 @@ def _serve_logo(filename: str):
     return send_from_directory(LOGO_DIR, filename)
 
 
-px.defaults.template = "plotly_dark"
+px.defaults.template = "plotly_white"
 
 
 def _ico(name: str, *extra_classes: str) -> html.Img:
@@ -252,31 +234,23 @@ def _filter_lbl(lang: str, key: str, icon_name: str) -> html.Div:
     )
 
 
-def _toolbar(lang: str, theme: str) -> html.Div:
-    """Header: brand + compact icon toggles (theme sun/moon, language globe)."""
-    rtl = lang == "ar"
-    toolbar_dir = "app-toolbar--rtl" if rtl else "app-toolbar--ltr"
-    # Icon shows the target mode on click: dark → sun (switch to light); light → moon (switch to dark)
-    theme_action_ico = "sun" if theme == "dark" else "moon"
-    theme_aria = T(lang, "ui_theme_to_light") if theme == "dark" else T(lang, "ui_theme_to_dark")
-    lang_aria = T(lang, "ui_lang_to_en") if lang == "ar" else T(lang, "ui_lang_to_ar")
-    theme_status = T(lang, "ui_status_theme_dark") if theme == "dark" else T(lang, "ui_status_theme_light")
-    lang_status = T(lang, "ui_status_lang_ar") if lang == "ar" else T(lang, "ui_status_lang_en")
-
+def _toolbar() -> html.Div:
+    """Header strip: ministry logo and title only (Arabic + light theme fixed)."""
+    lang = APP_LANG
     return html.Div(
-        className=f"app-toolbar {toolbar_dir}",
+        className="app-toolbar app-toolbar--rtl",
         role="banner",
-        **({"dir": "rtl"} if rtl else {"dir": "ltr"}),
+        dir="rtl",
         children=[
             html.Div(
-                className="app-brand" + (" app-brand--rtl" if rtl else " app-brand--ltr"),
+                className="app-brand app-brand--rtl",
                 children=[
                     html.Div(
                         className="app-logo-frame",
                         children=[
                             html.Img(
                                 src=LOGO_URL,
-                                alt="شعار الجهة" if lang == "ar" else "Ministry logo",
+                                alt="شعار الجهة",
                                 className="app-logo-img",
                             ),
                         ],
@@ -286,74 +260,6 @@ def _toolbar(lang: str, theme: str) -> html.Div:
                         children=[
                             html.H1(id="hdr-title", children=T(lang, "title")),
                             html.P(id="hdr-sub", children=T(lang, "subtitle")),
-                        ],
-                    ),
-                ],
-            ),
-            html.Div(
-                className="toolbar-toggles",
-                role="toolbar",
-                **{"aria-label": T(lang, "aria_toolbar_quick")},
-                children=[
-                    html.Div(
-                        className="toolbar-toggle-group toolbar-toggle-group--theme",
-                        children=[
-                            html.Div(
-                                className="toolbar-toggle-label",
-                                children=[
-                                    _ico("moon", "toolbar-lbl-ico"),
-                                    html.Span(T(lang, "ui_appearance"), className="toolbar-toggle-label-text"),
-                                ],
-                            ),
-                            html.Div(
-                                className="toolbar-toggle-stack",
-                                children=[
-                                    html.Button(
-                                        id="theme-toggle-btn",
-                                        type="button",
-                                        className="icon-toggle-btn icon-toggle-btn--theme",
-                                        title=theme_aria,
-                                        **{"aria-label": theme_aria},
-                                        children=[_ico(theme_action_ico, "icon-toggle-btn__ico")],
-                                    ),
-                                    html.Span(
-                                        theme_status,
-                                        className="toolbar-toggle-hint",
-                                        **{"aria-hidden": "true"},
-                                    ),
-                                ],
-                            ),
-                        ],
-                    ),
-                    html.Div(
-                        className="toolbar-toggle-group toolbar-toggle-group--lang",
-                        children=[
-                            html.Div(
-                                className="toolbar-toggle-label",
-                                children=[
-                                    _ico("globe", "toolbar-lbl-ico"),
-                                    html.Span(T(lang, "ui_language"), className="toolbar-toggle-label-text"),
-                                ],
-                            ),
-                            html.Div(
-                                className="toolbar-toggle-stack",
-                                children=[
-                                    html.Button(
-                                        id="locale-toggle-btn",
-                                        type="button",
-                                        className="icon-toggle-btn icon-toggle-btn--lang",
-                                        title=lang_aria,
-                                        **{"aria-label": lang_aria},
-                                        lang="ar" if lang == "ar" else "en",
-                                        children=[_ico("globe", "icon-toggle-btn__ico")],
-                                    ),
-                                    html.Span(
-                                        lang_status,
-                                        className="toolbar-toggle-hint",
-                                        **{"aria-hidden": "true"},
-                                    ),
-                                ],
-                            ),
                         ],
                     ),
                 ],
@@ -547,7 +453,7 @@ _MAIN_DASHBOARD = html.Div(
             id="main-tabs",
             value="tab-overview",
             className="custom-tabs",
-            colors={"border": "#2d3a4f", "primary": "#3b82f6", "background": "#1a2433"},
+            colors={"border": "#e2e8f0", "primary": "#2563eb", "background": "#f8fafc"},
             children=[
                 dcc.Tab(label=_tab_label("ar", "tab_ov", "layout-dashboard"), value="tab-overview"),
                 dcc.Tab(label=_tab_label("ar", "tab_tr", "line-chart"), value="tab-trends"),
@@ -563,110 +469,28 @@ _MAIN_DASHBOARD = html.Div(
 
 app.layout = html.Div(
     id="app-root",
-    className="theme-dark layout-rtl",
+    className=_root_class(APP_THEME, APP_LANG),
     dir="rtl",
     lang="ar",
     children=[
-        dcc.Store(id="theme-store", data="dark", storage_type="local"),
-        dcc.Store(id="locale-store", data="ar", storage_type="local"),
-        html.Div(id="toolbar-slot"),
+        _toolbar(),
         html.Div(
             id="app-inner",
-            style=_shell_style("dark", "ar"),
+            style=_shell_style(APP_THEME, APP_LANG),
             children=[_MAIN_DASHBOARD] if not DF.empty else [html.Div(id="empty-state")],
         ),
     ],
 )
 
 
-@callback(
-    Output("app-root", "className"),
-    Output("app-root", "dir"),
-    Output("app-root", "lang"),
-    Output("app-inner", "style"),
-    Output("toolbar-slot", "children"),
-    Input("theme-store", "data"),
-    Input("locale-store", "data"),
-)
-def sync_shell(theme: str | None, lang: str | None):
-    theme = theme if theme in ("dark", "light") else "dark"
-    lang = lang if lang in ("ar", "en") else "ar"
-    dir_attr = "rtl" if lang == "ar" else "ltr"
-    lang_attr = "ar" if lang == "ar" else "en"
-    return (
-        _root_class(theme, lang),
-        dir_attr,
-        lang_attr,
-        _shell_style(theme, lang),
-        _toolbar(lang, theme),
-    )
-
-
-@callback(
-    Output("theme-store", "data"),
-    Input("theme-toggle-btn", "n_clicks"),
-    State("theme-store", "data"),
-    prevent_initial_call=True,
-)
-def toggle_theme(_n, current):
-    cur = current if current in ("dark", "light") else "dark"
-    return "light" if cur == "dark" else "dark"
-
-
-@callback(
-    Output("locale-store", "data"),
-    Input("locale-toggle-btn", "n_clicks"),
-    State("locale-store", "data"),
-    prevent_initial_call=True,
-)
-def toggle_locale(_n, current):
-    cur = current if current in ("ar", "en") else "ar"
-    return "en" if cur == "ar" else "ar"
-
-
 if DF.empty:
 
-    @callback(Output("empty-state", "children"), Input("locale-store", "data"))
-    def empty_message(lang):
-        lang = lang if lang in ("ar", "en") else "ar"
-        return html.Div(T(lang, "empty"), style={"padding": "2.5rem", "textAlign": "center"})
+    @callback(Output("empty-state", "children"), Input("app-root", "className"))
+    def empty_message(_cls):
+        return html.Div(T(APP_LANG, "empty"), style={"padding": "2.5rem", "textAlign": "center"})
 
 
 if not DF.empty:
-
-    @callback(
-        Output("main-tabs", "children"),
-        Input("locale-store", "data"),
-        State("main-tabs", "value"),
-    )
-    def localize_tabs(lang, val):
-        lang = lang if lang in ("ar", "en") else "ar"
-        val = val or "tab-overview"
-        return [
-            dcc.Tab(label=_tab_label(lang, "tab_ov", "layout-dashboard"), value="tab-overview"),
-            dcc.Tab(label=_tab_label(lang, "tab_tr", "line-chart"), value="tab-trends"),
-            dcc.Tab(label=_tab_label(lang, "tab_de", "table"), value="tab-detail"),
-            dcc.Tab(label=_tab_label(lang, "tab_in", "lightbulb"), value="tab-insights"),
-        ]
-
-    @callback(
-        Output("filter-search", "placeholder"),
-        Input("locale-store", "data"),
-    )
-    def search_placeholder(lang):
-        lang = lang if lang in ("ar", "en") else "ar"
-        return T(lang, "ph_search")
-
-    @callback(
-        Output("filter-kind", "placeholder"),
-        Output("filter-year", "placeholder"),
-        Output("filter-gov", "placeholder"),
-        Input("locale-store", "data"),
-    )
-    def dropdown_placeholders(lang):
-        lang = lang if lang in ("ar", "en") else "ar"
-        p = T(lang, "ph_all")
-        return p, p, p
 
     @callback(
         Output("kpi-row", "children"),
@@ -681,12 +505,10 @@ if not DF.empty:
         Input("filter-gov", "value"),
         Input("filter-search", "value"),
         Input("main-tabs", "value"),
-        Input("theme-store", "data"),
-        Input("locale-store", "data"),
     )
-    def update_all(kinds, years, govs, search, tab, theme, lang):
-        theme = theme if theme in ("dark", "light") else "dark"
-        lang = lang if lang in ("ar", "en") else "ar"
+    def update_all(kinds, years, govs, search, tab):
+        theme = APP_THEME
+        lang = APP_LANG
         P = get_palette("light" if theme == "light" else "dark")
         px.defaults.template = P["plot_template"]
 
@@ -1077,10 +899,8 @@ if not DF.empty:
 
     clientside_callback(
         """
-        function(lang, tab) {
-            const phAr = "تصفية هذا العمود…";
-            const phEn = "Filter this column…";
-            const ph = (lang === "ar") ? phAr : phEn;
+        function(tab) {
+            const ph = "تصفية هذا العمود…";
             function apply() {
                 const root = document.getElementById("detail-data-table");
                 if (!root) return;
@@ -1096,7 +916,6 @@ if not DF.empty:
         }
         """,
         Output("detail-table-i18n-dummy", "children"),
-        Input("locale-store", "data"),
         Input("main-tabs", "value"),
     )
 
