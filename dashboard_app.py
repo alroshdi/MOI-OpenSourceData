@@ -86,6 +86,8 @@ STR = {
         "kpi_vote": "إجمالي المصوتين",
         "kpi_turn": "نسبة المشاركة الإجمالية %",
         "kpi_rows": "عدد سجلات الولايات",
+        "kpi_wil": "عدد الولايات (مميزة)",
+        "kpi_gov_n": "عدد المحافظات",
         "tab_ov": "نظرة عامة",
         "tab_tr": "اتجاهات زمنية",
         "tab_de": "تحليل تفصيلي",
@@ -108,6 +110,10 @@ STR = {
         "heat_x": "فئة عمرية",
         "heat_y": "محافظة",
         "heat_c": "عدد",
+        "sec_admin": "التوزيع الإداري والانتخابي",
+        "chart_wil_by_gov": "عدد الولايات المميزة لكل محافظة",
+        "chart_type_reg": "إجمالي الناخبين المسجلين حسب نوع الانتخاب",
+        "axis_wil_count": "عدد الولايات",
         "age_col": "الفئة العمرية",
         "tbl_gov": "المحافظة",
         "tbl_wil": "الولاية",
@@ -120,7 +126,7 @@ STR = {
         "ins_worst": "أدنى مشاركة: {w} ({g}) — {p}٪ سنة {y}.",
         "ins_male": "نسبة المصوتين من الذكور من إجمالي المصوتين: {r}٪.",
         "ins_female": "نسبة المصوتين من الإناث من إجمالي المصوتين: {r}٪.",
-        "ins_ctx": "ملخص نطاق البيانات: {n} سجل ولاية، السنوات من {y1} إلى {y2}، وأنواع الانتخاب: {kinds}.",
+        "ins_ctx": "ملخص نطاق البيانات: {n} سجل ولاية، {nw} ولاية مميزة، {ng} محافظة، السنوات من {y1} إلى {y2}، وأنواع الانتخاب: {kinds}.",
         "ins_govs": "المحافظات المعروضة ({m}): {govs}.",
         "ins_mean_med": "متوسط نسبة المشاركة بين السجلات المعروضة {mean}٪، والوسيط {med}٪.",
         "ins_top3": "أعلى ثلاث ولايات حسب المشاركة: {t}.",
@@ -483,6 +489,8 @@ if not DF.empty:
                 _kpi_block(T(lang, "kpi_vote"), z, P, "user-check"),
                 _kpi_block(T(lang, "kpi_turn"), z, P, "percent"),
                 _kpi_block(T(lang, "kpi_rows"), z, P, "hash"),
+                _kpi_block(T(lang, "kpi_wil"), z, P, "map-pin"),
+                _kpi_block(T(lang, "kpi_gov_n"), z, P, "layout-dashboard"),
             ]
             body = html.P(T(lang, "no_data"), style={"color": P["muted"]})
             return (
@@ -511,12 +519,18 @@ if not DF.empty:
         k2 = fmt_num(vote)
         k3 = f"{turnout:.1f}%" if pd.notna(turnout) else "—"
         k4 = str(nrows)
+        n_wil = int(df["الولاية"].nunique())
+        n_gov = int(df["المحافظة"].nunique())
+        k5 = str(n_wil)
+        k6 = str(n_gov)
 
         kpi_children = [
             _kpi_block(T(lang, "kpi_reg"), k1, P, "users"),
             _kpi_block(T(lang, "kpi_vote"), k2, P, "user-check"),
             _kpi_block(T(lang, "kpi_turn"), k3, P, "percent"),
             _kpi_block(T(lang, "kpi_rows"), k4, P, "hash"),
+            _kpi_block(T(lang, "kpi_wil"), k5, P, "map-pin"),
+            _kpi_block(T(lang, "kpi_gov_n"), k6, P, "layout-dashboard"),
         ]
 
         by_year = (
@@ -615,6 +629,55 @@ if not DF.empty:
         )
         _figure_rtl_axes(fig_age_bar)
 
+        wil_counts = (
+            df.groupby("المحافظة", as_index=False)["الولاية"]
+            .nunique()
+            .rename(columns={"الولاية": "عدد_الولايات"})
+            .sort_values("عدد_الولايات", ascending=True)
+        )
+        fig_wil_gov = px.bar(
+            wil_counts,
+            x="عدد_الولايات",
+            y="المحافظة",
+            orientation="h",
+            color="عدد_الولايات",
+            color_continuous_scale="Blues",
+            labels={"عدد_الولايات": T(lang, "axis_wil_count"), "المحافظة": T(lang, "tbl_gov")},
+        )
+        fig_wil_gov.update_layout(
+            template=P["plot_template"],
+            paper_bgcolor=P["card"],
+            plot_bgcolor=P["plot_bg"],
+            font=dict(color=P["text"]),
+            title=dict(text=T(lang, "chart_wil_by_gov"), x=0.95, xanchor="right"),
+            margin=dict(l=24, r=24, t=56, b=44),
+            height=max(320, len(wil_counts) * 28),
+            showlegend=False,
+        )
+        _figure_rtl_axes(fig_wil_gov)
+
+        type_sum = (
+            df.groupby("نوع_الانتخاب", as_index=False)["ناخبون_مسجلون_إجمالي"]
+            .sum()
+            .sort_values("ناخبون_مسجلون_إجمالي", ascending=False)
+        )
+        fig_type = px.pie(
+            type_sum,
+            names="نوع_الانتخاب",
+            values="ناخبون_مسجلون_إجمالي",
+            hole=0.38,
+            color_discrete_sequence=px.colors.qualitative.Set2,
+        )
+        fig_type.update_layout(
+            template=P["plot_template"],
+            paper_bgcolor=P["card"],
+            font=dict(color=P["text"]),
+            title=dict(text=T(lang, "chart_type_reg"), x=0.95, xanchor="right"),
+            margin=dict(l=24, r=24, t=56, b=44),
+            height=360,
+        )
+        _figure_rtl_pie(fig_type)
+
         gov_age = df.groupby("المحافظة")[age_cols].sum()
         fig_heat = px.imshow(
             gov_age.values,
@@ -633,37 +696,45 @@ if not DF.empty:
         )
         _figure_rtl_heatmap(fig_heat)
 
-        # عرض نسبي (مجموع 100%) لملء العرض بدون شريط تمرير زائف أو فراغ RTL
+        # أعمدة بعرض أدنى (px) + ترتيب DOM من اليسار لليمين حتى يوزّع Dash العرض بشكل صحيح؛
+        # اتجاه الشبكة LTR في CSS مع نص عربي RTL داخل الخلايا يمنع انهيار الأعمدة في واجهة RTL.
         table_cols = [
-            {"name": T(lang, "tbl_gov"), "id": "المحافظة", "width": "14%"},
-            {"name": T(lang, "tbl_wil"), "id": "الولاية", "width": "18%"},
-            {"name": T(lang, "tbl_year"), "id": "السنة", "type": "numeric", "width": "8%"},
-            {"name": T(lang, "tbl_type"), "id": "نوع_الانتخاب", "width": "16%"},
             {
-                "name": T(lang, "tbl_reg"),
-                "id": "ناخبون_مسجلون_إجمالي",
+                "name": T(lang, "tbl_pct"),
+                "id": "نسبة_المشاركة",
                 "type": "numeric",
-                "format": {"specifier": ",.0f"},
-                "width": "14%",
+                "format": {"specifier": ".1f"},
+                "min_width": "86px",
             },
             {
                 "name": T(lang, "tbl_vot"),
                 "id": "مصوتون_إجمالي",
                 "type": "numeric",
                 "format": {"specifier": ",.0f"},
-                "width": "14%",
+                "min_width": "96px",
             },
             {
-                "name": T(lang, "tbl_pct"),
-                "id": "نسبة_المشاركة",
+                "name": T(lang, "tbl_reg"),
+                "id": "ناخبون_مسجلون_إجمالي",
                 "type": "numeric",
-                "format": {"specifier": ".1f"},
-                "width": "16%",
+                "format": {"specifier": ",.0f"},
+                "min_width": "96px",
             },
+            {"name": T(lang, "tbl_type"), "id": "نوع_الانتخاب", "min_width": "128px"},
+            {"name": T(lang, "tbl_year"), "id": "السنة", "type": "numeric", "min_width": "70px"},
+            {"name": T(lang, "tbl_wil"), "id": "الولاية", "min_width": "132px"},
+            {"name": T(lang, "tbl_gov"), "id": "المحافظة", "min_width": "118px"},
         ]
-        table_df = df.sort_values(["السنة", "المحافظة", "الولاية"])[
-            ["المحافظة", "الولاية", "السنة", "نوع_الانتخاب", "ناخبون_مسجلون_إجمالي", "مصوتون_إجمالي", "نسبة_المشاركة"]
+        _detail_col_order = [
+            "نسبة_المشاركة",
+            "مصوتون_إجمالي",
+            "ناخبون_مسجلون_إجمالي",
+            "نوع_الانتخاب",
+            "السنة",
+            "الولاية",
+            "المحافظة",
         ]
+        table_df = df.sort_values(["السنة", "المحافظة", "الولاية"])[_detail_col_order]
 
         tbl = dash_table.DataTable(
             id="detail-data-table",
@@ -675,7 +746,7 @@ if not DF.empty:
             filter_action="native",
             fill_width=True,
             style_table={
-                "overflowX": "hidden",
+                "overflowX": "auto",
                 "borderRadius": "12px",
                 "border": f"1px solid {P['border']}",
                 "backgroundColor": P["card"],
@@ -685,16 +756,16 @@ if not DF.empty:
             },
             style_cell={
                 "textAlign": "right",
-                "padding": "5px 8px",
-                "minHeight": "28px",
-                "maxHeight": "36px",
-                "lineHeight": "1.2",
+                "padding": "2px 6px",
+                "minHeight": "22px",
+                "maxHeight": "30px",
+                "lineHeight": "1.15",
                 "verticalAlign": "middle",
                 "backgroundColor": P["bg"],
                 "color": P["text"],
                 "border": f"1px solid {P['border']}",
                 "fontFamily": "'IBM Plex Sans Arabic', Inter, sans-serif",
-                "fontSize": "0.8125rem",
+                "fontSize": "0.78rem",
                 "boxSizing": "border-box",
             },
             style_header={
@@ -702,28 +773,28 @@ if not DF.empty:
                 "backgroundColor": P["card"],
                 "color": P["text"],
                 "borderBottom": f"2px solid {P['accent']}",
-                "padding": "5px 8px",
+                "padding": "3px 6px",
                 "whiteSpace": "normal",
-                "lineHeight": "1.2",
+                "lineHeight": "1.15",
                 "verticalAlign": "middle",
-                "minHeight": "30px",
-                "maxHeight": "44px",
+                "minHeight": "26px",
+                "maxHeight": "40px",
                 "boxSizing": "border-box",
             },
             style_data={
-                "height": "32px",
-                "minHeight": "32px",
-                "maxHeight": "36px",
-                "padding": "5px 8px",
+                "height": "26px",
+                "minHeight": "26px",
+                "maxHeight": "30px",
+                "padding": "2px 6px",
                 "verticalAlign": "middle",
                 "boxSizing": "border-box",
             },
             style_filter={
                 "backgroundColor": P["plot_bg"],
                 "border": f"1px solid {P['border']}",
-                "padding": "3px 6px",
-                "minHeight": "28px",
-                "maxHeight": "32px",
+                "padding": "2px 4px",
+                "minHeight": "24px",
+                "maxHeight": "28px",
                 "verticalAlign": "middle",
                 "boxSizing": "border-box",
             },
@@ -737,7 +808,7 @@ if not DF.empty:
                 },
                 {
                     "selector": ".dash-filter input",
-                    "rule": f"font-family: inherit; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; border: 1px solid {P['border']}; background: {P['card']}; color: {P['text']}; min-height: 26px; height: 28px; line-height: 1.2; box-sizing: border-box;",
+                    "rule": f"font-family: inherit; font-size: 0.72rem; padding: 2px 6px; border-radius: 6px; border: 1px solid {P['border']}; background: {P['card']}; color: {P['text']}; min-height: 22px; height: 24px; line-height: 1.15; box-sizing: border-box;",
                 },
                 {
                     "selector": ".dash-table-container .previous-next-container",
@@ -745,7 +816,7 @@ if not DF.empty:
                 },
                 {
                     "selector": ".dash-spreadsheet-inner table",
-                    "rule": "width: 100% !important; table-layout: fixed !important; min-width: 0 !important;",
+                    "rule": "width: 100% !important; table-layout: auto !important;",
                 },
                 {
                     "selector": ".dash-spreadsheet",
@@ -777,7 +848,14 @@ if not DF.empty:
             govs_disp = f"{m_gov} محافظة — استخدم فلتر المحافظة لعرض أسماء محددة"
 
         insight_lines.append(
-            T(lang, "ins_ctx").format(n=len(df), y1=y1 or "—", y2=y2 or "—", kinds=kinds_str)
+            T(lang, "ins_ctx").format(
+                n=len(df),
+                nw=int(df["الولاية"].nunique()),
+                ng=int(df["المحافظة"].nunique()),
+                y1=y1 or "—",
+                y2=y2 or "—",
+                kinds=kinds_str,
+            )
         )
         insight_lines.append(T(lang, "ins_govs").format(m=m_gov, govs=govs_disp))
 
@@ -846,6 +924,14 @@ if not DF.empty:
                     children=[
                         html.Div([dcc.Graph(figure=fig_pie, config={"displayModeBar": True})]),
                         html.Div([dcc.Graph(figure=fig_age_bar, config={"displayModeBar": True})]),
+                    ],
+                ),
+                _section_title(T(lang, "sec_admin"), P, "map-pin"),
+                html.Div(
+                    style={"display": "grid", "gridTemplateColumns": "repeat(auto-fit, minmax(400px, 1fr))", "gap": "1rem"},
+                    children=[
+                        html.Div([dcc.Graph(figure=fig_wil_gov, config={"displayModeBar": True})]),
+                        html.Div([dcc.Graph(figure=fig_type, config={"displayModeBar": True})]),
                     ],
                 ),
                 html.Div([dcc.Graph(figure=fig_heat, config={"displayModeBar": True})], style={"marginTop": "1rem"}),
