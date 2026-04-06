@@ -15,7 +15,7 @@ if sys.platform == "win32":
         pass
 
 from flask import send_from_directory
-from dash import Dash, Input, Output, callback, dash_table, dcc, html
+from dash import Dash, Input, Output, dash_table, dcc, html
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -133,7 +133,7 @@ def T(lang: str, key: str) -> str:
     return STR.get(lang, STR["ar"]).get(key, key)
 
 
-app = Dash(
+dash_app = Dash(
     __name__,
     suppress_callback_exceptions=True,
     title="لوحة تحليلات بيانات الناخبين — وزارة الداخلية",
@@ -141,7 +141,7 @@ app = Dash(
     assets_folder=os.path.join(BASE_DIR, "assets"),
 )
 
-server = app.server
+server = dash_app.server
 
 
 @server.route("/logo/<path:filename>")
@@ -156,7 +156,7 @@ def _ico(name: str, *extra_classes: str) -> html.Img:
     """Inline SVG icons from assets/icons (stroke icons, slate tone)."""
     parts = ["ui-ico"] + [c for c in extra_classes if c]
     return html.Img(
-        src=app.get_asset_url(f"icons/{name}.svg"),
+        src=dash_app.get_asset_url(f"icons/{name}.svg"),
         className=" ".join(parts),
         alt="",
         **{"aria-hidden": "true"},
@@ -398,7 +398,7 @@ _MAIN_DASHBOARD = html.Div(
     ],
 )
 
-app.layout = html.Div(
+dash_app.layout = html.Div(
     id="app-root",
     className="theme-light layout-rtl",
     dir="rtl",
@@ -416,14 +416,14 @@ app.layout = html.Div(
 
 if DF.empty:
 
-    @callback(Output("empty-state", "children"), Input("app-root", "className"))
+    @dash_app.callback(Output("empty-state", "children"), Input("app-root", "className"))
     def empty_message(_cls):
         return html.Div(T(APP_LANG, "empty"), style={"padding": "2.5rem", "textAlign": "center"})
 
 
 if not DF.empty:
 
-    @callback(
+    @dash_app.callback(
         Output("kpi-row", "children"),
         Output("filter-title", "children"),
         Output("lbl-kind", "children"),
@@ -894,4 +894,4 @@ if not DF.empty:
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8050"))
-    app.run(debug=False, host="127.0.0.1", port=port)
+    dash_app.run(debug=False, host="127.0.0.1", port=port)
