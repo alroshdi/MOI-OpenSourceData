@@ -635,26 +635,45 @@ if not DF.empty:
             .rename(columns={"الولاية": "عدد_الولايات"})
             .sort_values("عدد_الولايات", ascending=True)
         )
+        # لون موحّد بدون شريط ألوان (يتعارض مع محور يمين RTL) + هوامش أوسع لأسماء المحافظات
         fig_wil_gov = px.bar(
             wil_counts,
             x="عدد_الولايات",
             y="المحافظة",
             orientation="h",
-            color="عدد_الولايات",
-            color_continuous_scale="Blues",
             labels={"عدد_الولايات": T(lang, "axis_wil_count"), "المحافظة": T(lang, "tbl_gov")},
+        )
+        fig_wil_gov.update_traces(
+            marker_color=P["accent"],
+            marker_line_color=P["border"],
+            marker_line_width=1,
+            text=wil_counts["عدد_الولايات"],
+            texttemplate="%{text}",
+            textposition="outside",
+            textfont=dict(size=11, color=P["text"]),
+            cliponaxis=False,
         )
         fig_wil_gov.update_layout(
             template=P["plot_template"],
             paper_bgcolor=P["card"],
             plot_bgcolor=P["plot_bg"],
             font=dict(color=P["text"]),
-            title=dict(text=T(lang, "chart_wil_by_gov"), x=0.95, xanchor="right"),
-            margin=dict(l=24, r=24, t=56, b=44),
-            height=max(320, len(wil_counts) * 28),
+            title=dict(
+                text=T(lang, "chart_wil_by_gov"),
+                x=0.98,
+                xanchor="right",
+                yref="paper",
+                y=1.0,
+                yanchor="bottom",
+                pad=dict(b=10),
+            ),
+            margin=dict(l=52, r=200, t=68, b=52),
+            height=max(340, len(wil_counts) * 30),
             showlegend=False,
+            xaxis=dict(showgrid=True, gridcolor=P["border"], zeroline=False),
         )
         _figure_rtl_axes(fig_wil_gov)
+        fig_wil_gov.update_layout(yaxis=dict(side="right", tickfont=dict(size=11), automargin=True))
 
         type_sum = (
             df.groupby("نوع_الانتخاب", as_index=False)["ناخبون_مسجلون_إجمالي"]
@@ -930,7 +949,7 @@ if not DF.empty:
                 html.Div(
                     style={"display": "grid", "gridTemplateColumns": "repeat(auto-fit, minmax(400px, 1fr))", "gap": "1rem"},
                     children=[
-                        html.Div([dcc.Graph(figure=fig_wil_gov, config={"displayModeBar": True})]),
+                        html.Div([dcc.Graph(figure=fig_wil_gov, config={"displayModeBar": "hover"})]),
                         html.Div([dcc.Graph(figure=fig_type, config={"displayModeBar": True})]),
                     ],
                 ),
