@@ -17,6 +17,7 @@ if sys.platform == "win32":
 from flask import send_from_directory
 from dash import Dash, Input, Output, dash_table, dcc, html
 import pandas as pd
+import plotly.colors as plc
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -58,15 +59,17 @@ APP_LANG = "ar"
 def get_palette() -> dict:
     """Light theme palette only."""
     return {
-        "bg": "#f0f4f8",
+        "bg": "#eef2f7",
         "card": "#ffffff",
         "plot_bg": "#f8fafc",
         "text": "#0f172a",
         "muted": "#64748b",
-        "accent": "#2563eb",
-        "accent2": "#059669",
+        "accent": "#1d4ed8",
+        "accent2": "#047857",
+        "accent_soft": "#93c5fd",
         "border": "#e2e8f0",
         "table_alt": "#f1f5f9",
+        "grid": "rgba(15, 23, 42, 0.07)",
         "plot_template": "plotly_white",
     }
 
@@ -113,6 +116,7 @@ STR = {
         "sec_admin": "التوزيع الإداري والانتخابي",
         "chart_wil_by_gov": "عدد الولايات المميزة لكل محافظة",
         "chart_type_reg": "إجمالي الناخبين المسجلين حسب نوع الانتخاب",
+        "chart_top_wil": "أعلى 15 ولاية حسب متوسط نسبة المشاركة",
         "axis_wil_count": "عدد الولايات",
         "age_col": "الفئة العمرية",
         "tbl_gov": "المحافظة",
@@ -246,8 +250,41 @@ def _figure_rtl_pie(fig) -> None:
 def _figure_rtl_heatmap(fig) -> None:
     fig.update_layout(
         yaxis=dict(side="right"),
-        coloraxis_colorbar=dict(x=-0.02, xanchor="right", len=0.7),
+        coloraxis_colorbar=dict(
+            x=-0.04,
+            xanchor="right",
+            len=0.72,
+            thickness=18,
+            tickfont=dict(size=11, color="#475569"),
+            title_font=dict(size=11),
+        ),
     )
+
+
+_CHART_FAMILY = "'IBM Plex Sans Arabic', 'Inter', 'Segoe UI', Tahoma, sans-serif"
+
+GRAPH_CONFIG: dict = {
+    "displayModeBar": "hover",
+    "displaylogo": False,
+    "modeBarButtonsToRemove": ["lasso2d", "select2d"],
+    "toImageButtonOptions": {"format": "png", "scale": 2},
+}
+
+
+def _hoverlabel(P: dict) -> dict:
+    return {
+        "hoverlabel": dict(
+            font_family=_CHART_FAMILY,
+            bgcolor=P["card"],
+            bordercolor=P["border"],
+            font_size=13,
+            font_color=P["text"],
+        )
+    }
+
+
+def _chart_font(P: dict, size: int = 13) -> dict:
+    return {"family": _CHART_FAMILY, "color": P["text"], "size": size}
 
 
 def _kpi_block(title: str, value: str, P: dict, icon_name: str) -> html.Div:
@@ -262,7 +299,7 @@ def _kpi_block(title: str, value: str, P: dict, icon_name: str) -> html.Div:
                     html.Div(title, className="kpi-card__title", style={"color": P["muted"]}),
                 ],
             ),
-            html.Div(value, className="kpi-card__value", style={"fontSize": "1.65rem", "fontWeight": "700", "marginTop": "0.35rem"}),
+            html.Div(value, className="kpi-card__value"),
         ],
     )
 
@@ -276,12 +313,12 @@ def _section_title(text: str, P: dict, icon_name: str | None = None) -> html.H2:
         className="section-title" + (" section-title--with-icon" if icon_name else ""),
         children=kids,
         style={
-            "fontSize": "1.12rem",
             "fontWeight": "600",
-            "margin": "2rem 0 1rem",
+            "margin": "1.75rem 0 0.85rem",
             "color": P["text"],
-            "borderBottom": f"1px solid {P['border']}",
-            "paddingBottom": "0.5rem",
+            "borderBottom": f"2px solid {P['accent']}",
+            "paddingBottom": "0.45rem",
+            "letterSpacing": "-0.02em",
         },
     )
 
@@ -546,7 +583,8 @@ if not DF.empty:
                 y=by_year["ناخبون_مسجلون_إجمالي"],
                 name=T(lang, "chart_reg"),
                 mode="lines+markers",
-                line=dict(color=P["accent"]),
+                line=dict(color=P["accent"], width=2.75),
+                marker=dict(size=10, line=dict(width=0), color=P["accent"]),
             )
         )
         fig_line.add_trace(
@@ -555,21 +593,37 @@ if not DF.empty:
                 y=by_year["مصوتون_إجمالي"],
                 name=T(lang, "chart_vote"),
                 mode="lines+markers",
-                line=dict(color=P["accent2"]),
+                line=dict(color=P["accent2"], width=2.75),
+                marker=dict(size=10, line=dict(width=0), color=P["accent2"]),
             )
         )
         fig_line.update_layout(
             template=P["plot_template"],
             paper_bgcolor=P["card"],
             plot_bgcolor=P["plot_bg"],
-            font=dict(color=P["text"]),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02),
-            margin=dict(l=48, r=24, t=44, b=44),
+            font=_chart_font(P),
+            margin=dict(l=56, r=56, t=56, b=56),
             yaxis_title=T(lang, "axis_count"),
             xaxis_title=T(lang, "axis_year"),
-            height=380,
+            height=400,
+            hovermode="x unified",
+            **_hoverlabel(P),
         )
+        fig_line.update_xaxes(showgrid=True, gridwidth=1, gridcolor=P["grid"], zeroline=False)
+        fig_line.update_yaxes(showgrid=True, gridwidth=1, gridcolor=P["grid"], zeroline=False, separatethousands=True)
         _figure_rtl_axes(fig_line)
+        fig_line.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.1,
+                x=0,
+                xanchor="right",
+                bgcolor="rgba(255,255,255,0.92)",
+                bordercolor=P["border"],
+                borderwidth=1,
+            ),
+        )
 
         top_n = (
             df.groupby(["الولاية", "المحافظة"], as_index=False)
@@ -577,26 +631,43 @@ if not DF.empty:
             .sort_values("نسبة_المشاركة", ascending=False)
             .head(15)
         )
+        _n_gov_bar = int(top_n["المحافظة"].nunique())
+        _bar_palette = (px.colors.qualitative.Bold + px.colors.qualitative.Safe + px.colors.qualitative.Set2)[: max(_n_gov_bar, 3)]
         fig_bar = px.bar(
             top_n,
             x="نسبة_المشاركة",
             y="الولاية",
             orientation="h",
             color="المحافظة",
+            color_discrete_sequence=_bar_palette,
             text="نسبة_المشاركة",
         )
-        fig_bar.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
+        fig_bar.update_traces(
+            texttemplate="%{text:.1f}%",
+            textposition="outside",
+            textfont=dict(size=11, color=P["text"]),
+            marker_line_width=0,
+            cliponaxis=False,
+        )
+        _xmax = float(top_n["نسبة_المشاركة"].max()) if len(top_n) else 100.0
+        _xmax = max(_xmax * 1.14, 8.0) if pd.notna(_xmax) else 100.0
         fig_bar.update_layout(
             template=P["plot_template"],
             paper_bgcolor=P["card"],
             plot_bgcolor=P["plot_bg"],
-            font=dict(color=P["text"]),
-            margin=dict(l=24, r=24, t=44, b=44),
-            height=480,
+            font=_chart_font(P),
+            title=dict(text=T(lang, "chart_top_wil"), x=0.98, xanchor="right", yref="paper", y=1.0, yanchor="bottom", pad=dict(b=8)),
+            margin=dict(l=44, r=200, t=64, b=72),
+            height=500,
             showlegend=True,
+            xaxis=dict(showgrid=True, gridcolor=P["grid"], zeroline=False, range=[0, _xmax]),
             yaxis={"categoryorder": "total ascending"},
+            **_hoverlabel(P),
         )
         _figure_rtl_axes(fig_bar)
+        fig_bar.update_layout(
+            legend=dict(orientation="h", yanchor="top", y=-0.22, x=0, xanchor="right", font=dict(size=11)),
+        )
 
         gender = pd.DataFrame(
             {
@@ -604,29 +675,67 @@ if not DF.empty:
                 "val": [df["مصوتون_ذكور"].sum(), df["مصوتون_إناث"].sum()],
             }
         )
-        fig_pie = px.pie(gender, names="cat", values="val", hole=0.45, color_discrete_sequence=[P["accent"], "#ec4899"])
+        fig_pie = px.pie(
+            gender,
+            names="cat",
+            values="val",
+            hole=0.5,
+            color_discrete_sequence=[P["accent"], "#db2777"],
+        )
+        fig_pie.update_traces(
+            textposition="inside",
+            textinfo="label+percent",
+            textfont_size=13,
+            marker=dict(line=dict(color=P["card"], width=2)),
+            hovertemplate="%{label}<br>%{value:,.0f}<br>%{percent}<extra></extra>",
+        )
         fig_pie.update_layout(
             template=P["plot_template"],
             paper_bgcolor=P["card"],
-            font=dict(color=P["text"]),
-            margin=dict(l=24, r=24, t=44, b=44),
-            height=360,
+            font=_chart_font(P),
+            margin=dict(l=40, r=40, t=48, b=48),
+            height=380,
+            showlegend=False,
+            **_hoverlabel(P),
         )
         _figure_rtl_pie(fig_pie)
 
         age_cols = [f"عمر_مسجل_{i}" for i in range(6)]
         age_labels = AGE_REGISTERED_LABELS
         age_sum = df[age_cols].sum()
-        heat_data = pd.DataFrame({T(lang, "age_col"): age_labels, T(lang, "heat_c"): age_sum.values})
-        fig_age_bar = px.bar(heat_data, x=T(lang, "age_col"), y=T(lang, "heat_c"), color=T(lang, "heat_c"), color_continuous_scale="Blues")
+        n_age = len(age_labels)
+        _age_stops = [i / max(n_age - 1, 1) for i in range(n_age)]
+        _age_colors = plc.sample_colorscale(
+            [[0, "#dbeafe"], [0.45, P["accent"]], [1, "#172554"]],
+            _age_stops,
+        )
+        fig_age_bar = go.Figure(
+            go.Bar(
+                x=age_labels,
+                y=age_sum.values,
+                marker_color=_age_colors,
+                marker_line_width=0,
+                text=[f"{float(v):,.0f}" if pd.notna(v) else "—" for v in age_sum.values],
+                textposition="outside",
+                textfont=dict(size=11, color=P["text"]),
+                cliponaxis=False,
+                hovertemplate="%{x}<br>%{y:,.0f}<extra></extra>",
+            )
+        )
         fig_age_bar.update_layout(
             template=P["plot_template"],
             paper_bgcolor=P["card"],
             plot_bgcolor=P["plot_bg"],
-            font=dict(color=P["text"]),
-            height=360,
+            font=_chart_font(P),
+            margin=dict(l=48, r=48, t=48, b=56),
+            height=380,
             showlegend=False,
+            xaxis_title=T(lang, "age_col"),
+            yaxis_title=T(lang, "axis_count"),
+            **_hoverlabel(P),
         )
+        fig_age_bar.update_xaxes(showgrid=False, zeroline=False)
+        fig_age_bar.update_yaxes(showgrid=True, gridwidth=1, gridcolor=P["grid"], zeroline=False, separatethousands=True)
         _figure_rtl_axes(fig_age_bar)
 
         wil_counts = (
@@ -652,6 +761,7 @@ if not DF.empty:
             textposition="outside",
             textfont=dict(size=11, color=P["text"]),
             cliponaxis=False,
+            hovertemplate="%{y}<br>%{x}<extra></extra>",
         )
         fig_wil_gov.update_layout(
             template=P["plot_template"],
@@ -670,7 +780,8 @@ if not DF.empty:
             margin=dict(l=52, r=200, t=68, b=52),
             height=max(340, len(wil_counts) * 30),
             showlegend=False,
-            xaxis=dict(showgrid=True, gridcolor=P["border"], zeroline=False),
+            xaxis=dict(showgrid=True, gridcolor=P["grid"], zeroline=False),
+            **_hoverlabel(P),
         )
         _figure_rtl_axes(fig_wil_gov)
         fig_wil_gov.update_layout(yaxis=dict(side="right", tickfont=dict(size=11), automargin=True))
@@ -684,16 +795,32 @@ if not DF.empty:
             type_sum,
             names="نوع_الانتخاب",
             values="ناخبون_مسجلون_إجمالي",
-            hole=0.38,
+            hole=0.45,
             color_discrete_sequence=px.colors.qualitative.Set2,
+        )
+        fig_type.update_traces(
+            textposition="outside",
+            textinfo="label+percent",
+            textfont_size=11,
+            marker=dict(line=dict(color=P["card"], width=2)),
+            hovertemplate="%{label}<br>%{value:,.0f}<br>%{percent}<extra></extra>",
         )
         fig_type.update_layout(
             template=P["plot_template"],
             paper_bgcolor=P["card"],
-            font=dict(color=P["text"]),
-            title=dict(text=T(lang, "chart_type_reg"), x=0.95, xanchor="right"),
-            margin=dict(l=24, r=24, t=56, b=44),
-            height=360,
+            font=_chart_font(P),
+            title=dict(
+                text=T(lang, "chart_type_reg"),
+                x=0.98,
+                xanchor="right",
+                yref="paper",
+                y=1.0,
+                yanchor="bottom",
+                pad=dict(b=10),
+            ),
+            margin=dict(l=40, r=40, t=64, b=48),
+            height=380,
+            **_hoverlabel(P),
         )
         _figure_rtl_pie(fig_type)
 
@@ -703,15 +830,17 @@ if not DF.empty:
             labels=dict(x=T(lang, "heat_x"), y=T(lang, "heat_y"), color=T(lang, "heat_c")),
             x=age_labels,
             y=gov_age.index.tolist(),
-            color_continuous_scale="Viridis",
+            color_continuous_scale="YlGnBu",
             aspect="auto",
         )
         fig_heat.update_layout(
             template=P["plot_template"],
             paper_bgcolor=P["card"],
-            font=dict(color=P["text"]),
-            height=max(320, len(gov_age) * 28),
-            margin=dict(l=120, r=24, t=44, b=60),
+            plot_bgcolor=P["plot_bg"],
+            font=_chart_font(P, 12),
+            height=max(340, len(gov_age) * 30),
+            margin=dict(l=100, r=48, t=52, b=64),
+            **_hoverlabel(P),
         )
         _figure_rtl_heatmap(fig_heat)
 
@@ -766,7 +895,7 @@ if not DF.empty:
             fill_width=True,
             style_table={
                 "overflowX": "auto",
-                "borderRadius": "12px",
+                "borderRadius": "14px",
                 "border": f"1px solid {P['border']}",
                 "backgroundColor": P["card"],
                 "width": "100%",
@@ -924,44 +1053,48 @@ if not DF.empty:
             [
                 _section_title(T(lang, "sec_in"), P, "lightbulb"),
                 html.Ul(
-                    [html.Li(t, style={"marginBottom": "0.5rem", "lineHeight": "1.6"}) for t in insight_lines]
+                    [html.Li(t, style={"marginBottom": "0.5rem", "lineHeight": "1.65"}) for t in insight_lines]
                     or [html.Li(T(lang, "insight_none"))]
                 ),
                 html.P(
                     T(lang, "note_2011"),
-                    style={"color": P["muted"], "fontSize": "0.9rem", "marginTop": "1rem"},
+                    style={"color": P["muted"], "fontSize": "0.875rem", "marginTop": "1.1rem", "lineHeight": "1.6"},
                 ),
             ],
-            className="insights-section",
+            className="insights-section insights-panel",
         )
 
         overview = html.Div(
             [
                 _section_title(T(lang, "sec_ov"), P, "layout-dashboard"),
                 html.Div(
-                    style={"display": "grid", "gridTemplateColumns": "repeat(auto-fit, minmax(400px, 1fr))", "gap": "1rem"},
+                    style={"display": "grid", "gridTemplateColumns": "repeat(auto-fit, minmax(min(100%, 380px), 1fr))", "gap": "1.15rem"},
                     children=[
-                        html.Div([dcc.Graph(figure=fig_pie, config={"displayModeBar": True})]),
-                        html.Div([dcc.Graph(figure=fig_age_bar, config={"displayModeBar": True})]),
+                        html.Div(className="chart-card", children=[dcc.Graph(figure=fig_pie, config=GRAPH_CONFIG)]),
+                        html.Div(className="chart-card", children=[dcc.Graph(figure=fig_age_bar, config=GRAPH_CONFIG)]),
                     ],
                 ),
                 _section_title(T(lang, "sec_admin"), P, "map-pin"),
                 html.Div(
-                    style={"display": "grid", "gridTemplateColumns": "repeat(auto-fit, minmax(400px, 1fr))", "gap": "1rem"},
+                    style={"display": "grid", "gridTemplateColumns": "repeat(auto-fit, minmax(min(100%, 380px), 1fr))", "gap": "1.15rem"},
                     children=[
-                        html.Div([dcc.Graph(figure=fig_wil_gov, config={"displayModeBar": "hover"})]),
-                        html.Div([dcc.Graph(figure=fig_type, config={"displayModeBar": True})]),
+                        html.Div(className="chart-card", children=[dcc.Graph(figure=fig_wil_gov, config=GRAPH_CONFIG)]),
+                        html.Div(className="chart-card", children=[dcc.Graph(figure=fig_type, config=GRAPH_CONFIG)]),
                     ],
                 ),
-                html.Div([dcc.Graph(figure=fig_heat, config={"displayModeBar": True})], style={"marginTop": "1rem"}),
+                html.Div(
+                    className="chart-card chart-card--wide",
+                    style={"marginTop": "1rem"},
+                    children=[dcc.Graph(figure=fig_heat, config=GRAPH_CONFIG)],
+                ),
             ]
         )
 
         trends = html.Div(
             [
                 _section_title(T(lang, "sec_tr"), P, "line-chart"),
-                dcc.Graph(figure=fig_line, config={"displayModeBar": True}),
-                html.Div(style={"marginTop": "1rem"}, children=[dcc.Graph(figure=fig_bar, config={"displayModeBar": True})]),
+                html.Div(className="chart-card chart-card--wide", children=[dcc.Graph(figure=fig_line, config=GRAPH_CONFIG)]),
+                html.Div(className="chart-card chart-card--wide", style={"marginTop": "1.1rem"}, children=[dcc.Graph(figure=fig_bar, config=GRAPH_CONFIG)]),
             ]
         )
 

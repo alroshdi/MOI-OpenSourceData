@@ -11,14 +11,14 @@
 
 /* Single fixed theme: light + RTL (Arabic) */
 #app-root {
-  --shell-bg: #f0f4f8;
+  --shell-bg: #eef2f7;
   --surface: #ffffff;
   --elevated: #f8fafc;
   --text: #0f172a;
   --muted: #64748b;
   --border: #e2e8f0;
-  --accent: #2563eb;
-  --accent-2: #059669;
+  --accent: #1d4ed8;
+  --accent-2: #047857;
   --toolbar-border: rgba(15, 23, 42, 0.08);
   min-height: 100vh;
   transition: background var(--transition), color var(--transition);
@@ -129,12 +129,60 @@
   box-shadow: var(--shadow-md);
 }
 
+.kpi-card__value {
+  font-size: clamp(1.35rem, 2.6vw, 1.72rem);
+  font-weight: 700;
+  margin-top: 0.35rem;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
 .filter-card {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--elevated);
-  padding: 1.25rem;
+  padding: 1.25rem 1.35rem;
   margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Plotly charts — card frame */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 0.65rem 0.85rem 0.35rem;
+  box-sizing: border-box;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.chart-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(29, 78, 216, 0.12);
+}
+
+.chart-card--wide {
+  width: 100%;
+  max-width: 100%;
+}
+
+.chart-card .js-plotly-plot .plotly .main-svg {
+  border-radius: 8px;
+}
+
+.section-title {
+  font-size: clamp(1.05rem, 2.1vw, 1.18rem);
+}
+
+.insights-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 0.25rem 1.25rem 1.35rem;
+  margin-top: 0.25rem;
 }
 
 /* Dash tabs — pill bar */
@@ -156,7 +204,9 @@
 
 #main-tabs .tab--selected {
   border-bottom: none !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%) !important;
+  color: var(--accent) !important;
+  box-shadow: 0 1px 3px rgba(29, 78, 216, 0.18), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 /* Detail tab — full width (no stray gap in RTL) */
