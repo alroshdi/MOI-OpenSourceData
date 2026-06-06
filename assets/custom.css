@@ -97,6 +97,49 @@
   border: 0;
 }
 
+/* Developer credit — fixed top-left */
+.dev-credit {
+  position: fixed;
+  top: 0.65rem;
+  left: 0.75rem;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  backdrop-filter: blur(6px);
+}
+
+.dev-credit:hover {
+  color: var(--accent);
+  border-color: rgba(29, 78, 216, 0.35);
+  box-shadow: var(--shadow-md);
+}
+
+.dev-credit-ico {
+  width: 14px;
+  height: 14px;
+  opacity: 0.9;
+}
+
+@media (max-width: 640px) {
+  .dev-credit {
+    top: 0.5rem;
+    left: 0.5rem;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.6rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   #app-root,
   .kpi-card,

@@ -51,6 +51,7 @@ def _discover_logo_url() -> str:
 
 
 LOGO_URL = _discover_logo_url()
+HAJER_SYSTEMS_URL = "https://alroshdi.github.io/hajersystems/"
 
 # واجهة ثابتة: عربية + وضع فاتح فقط (لا إعدادات ولا مبدّلات)
 APP_LANG = "ar"
@@ -184,6 +185,20 @@ def _filter_lbl(lang: str, key: str, icon_name: str) -> html.Div:
     return html.Div(
         className="filter-lbl",
         children=[_ico(icon_name, "filter-lbl-ico"), html.Span(T(lang, key))],
+    )
+
+
+def _dev_credit() -> html.A:
+    return html.A(
+        href=HAJER_SYSTEMS_URL,
+        target="_blank",
+        rel="noopener noreferrer",
+        className="dev-credit",
+        title="Hajer Systems",
+        children=[
+            _ico("external-link", "dev-credit-ico"),
+            html.Span("Done by Hajer"),
+        ],
     )
 
 
@@ -447,6 +462,7 @@ dash_app.layout = html.Div(
     dir="rtl",
     lang="ar",
     children=[
+        _dev_credit(),
         _toolbar(),
         html.Div(
             id="app-inner",
